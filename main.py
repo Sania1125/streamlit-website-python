@@ -1,63 +1,81 @@
-import streamlit as st
+# streamlit_app.py
 
+
+import streamlit as st
+import pandas as pd
+import numpy as np
+
+# Set page configuration
+st.set_page_config(page_title="NYC Taxi Data Explorer", layout="centered")
+
+# Define layout sections
 header = st.container()
 dataset = st.container()
 features = st.container()
-modelTraining = st.container()
+model_training = st.container()
 
-st.title('FirstApp')
+# App title
+st.title("🚖 NYC Taxi Data Dashboard")
 
+# Header Section
 with header:
-    st.title('Welcome to Awesome Data Science Project')
-    st.subheader('My very own subheader is this one!')
-    st.text_area(label="Give some text here: ")
-    st.text('This is just ordinary text in normal font and size. Quick brown fox jumps over the lazy dog.')
+    st.header("Welcome to the NYC Taxi Data Science Project 🚕")
+    st.subheader("A mini dashboard powered by Streamlit and Python")
+    user_input = st.text_area("🔍 Share your thoughts or observations:")
+    st.write("💬 You typed:", user_input)
+    st.markdown("This dashboard lets you explore pickup patterns in New York City using real-world Uber data.")
 
+# Dataset Section
 with dataset:
-    st.title('NYC Taxi Dataset')
+    st.header("🗂️ Dataset Overview")
+    st.markdown("We are working with a sample of **Uber pickups in NYC (Sept 2014)**.")
 
-DATE_COLUMN = 'date/time'
-DATA_URL = ('https://s3-us-west-2.amazonaws.com/'
-         'streamlit-demo-data/uber-raw-data-sep14.csv.gz')
+    DATE_COLUMN = 'date/time'
+    DATA_URL = 'https://s3-us-west-2.amazonaws.com/streamlit-demo-data/uber-raw-data-sep14.csv.gz'
 
-import numpy as np
-import pandas as pd
+    @st.cache_data
+    def load_data(nrows):
+        data = pd.read_csv(DATA_URL, nrows=nrows)
+        data.columns = [col.lower() for col in data.columns]
+        data[DATE_COLUMN] = pd.to_datetime(data[DATE_COLUMN])
+        return data
 
+    data_load_state = st.text('📥 Loading data...')
+    data = load_data(10000)
+    data_load_state.text('✅ Data loaded successfully!')
 
-@st.cache
-def load_data(nrows):
-    data = pd.read_csv(DATA_URL, nrows=nrows)
-    lowercase = lambda x: str(x).lower()
-    data.rename(lowercase, axis='columns', inplace=True)
-    data[DATE_COLUMN] = pd.to_datetime(data[DATE_COLUMN])
-    return data
+    if st.checkbox("Show raw data"):
+        st.subheader("📝 Raw Data")
+        st.write(data)
 
-# Create a text element and let the reader know the data is loading.
-data_load_state = st.text('Loading data...')
-# Load 10,000 rows of data into the dataframe.
-data = load_data(10000)
-# Notify the reader that the data was successfully loaded.
-data_load_state.text("Done! (using st.cache)")
+    # Plot hourly pickups
+    st.subheader("📊 Number of pickups by hour")
+    hist_values = np.histogram(data[DATE_COLUMN].dt.hour, bins=24, range=(0, 24))[0]
+    st.bar_chart(hist_values)
 
-if st.checkbox('Show raw data'):
-    st.subheader('Raw data')
-    st.write(data)
+    # Interactive map by hour
+    hour_to_filter = st.slider("⏰ Select pickup hour", 0, 23, 17)
+    filtered_data = data[data[DATE_COLUMN].dt.hour == hour_to_filter]
+    st.subheader(f"🗺️ Map of pickups at {hour_to_filter}:00")
+    st.map(filtered_data)
 
-hist_values = np.histogram(
-    data[DATE_COLUMN].dt.hour, bins=24, range=(0,24))[0]
-
-st.bar_chart(hist_values)
-
-hour_to_filter = st.slider('hour', 0, 23, 17)  # min: 0h, max: 23h, default: 17h
-filtered_data = data[data[DATE_COLUMN].dt.hour == hour_to_filter]
-st.subheader(f'Map of all pickups at {hour_to_filter}:00')
-st.map(filtered_data)
-
-
+# Features Section
 with features:
-    st.header("The Featuers")
+    st.header("🔍 Custom Features")
+    st.markdown("""
+    - Cleaned and renamed columns
+    - Hourly pickup visualization
+    - Interactive map filter
+    - User text input and feedback
+    """)
+    st.success("✨ New features added successfully!")
     st.balloons()
-    st.text('Here are the featuers which I created recently. An as thy say, the devil is always in the featuers!!')
-    
-with modelTraining:
-    st.title('Model Training')
+
+# Model Training Placeholder
+with model_training:
+    st.header("🤖 Model Training Section (Coming Soon)")
+    st.markdown("Stay tuned! In future updates, this section will include ML models for predicting pickup demand.")
+
+
+
+
